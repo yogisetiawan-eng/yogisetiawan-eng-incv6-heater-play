@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>INCV6 heat + airflow 3D — run v8 (18 °C room)</title>
+<title>INCV6 heat + airflow 3D — run v11 (18 °C room)</title>
 <style>
   :root { --bg:#0f1115; --panel:#171a21; --ink:#e7e9ee; --mute:#9aa3b2; --line:#2a2f3a; --acc:#e8a33d; }
   html,body { margin:0; height:100%; background:var(--bg); color:var(--ink); font:13px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
@@ -52,6 +52,7 @@
     <label><input type="checkbox" data-g="internals" checked> Hotels, robot, hardware</label>
     <label><input type="checkbox" data-g="plates"> Microplates</label>
     <label><input type="checkbox" data-g="blower" checked> Blower duct parts</label>
+    <label><input type="checkbox" data-g="enclosure"> Enclosure / outer skin (heat sink to the room)</label>
     <label><input type="checkbox" id="showFlow" checked> Airflow streamlines</label>
     <label><input type="checkbox" id="showSens" checked> Sensors</label>
 
@@ -74,7 +75,23 @@
 
     <h2>Control loops</h2>
     <table id="loops"></table>
-    <div class="note">Real machine at steady state: air loop 0 %. Model needs 16 % → still short of heat into the chamber (open item).</div>
+    <div class="note">Real machine at steady state: air loop 0 %. Model needs 28 % → still short of heat into the chamber (open item).</div>
+
+    <h2>Against the real machine</h2>
+    <table id="calib">
+      <tr><th></th><th>Real</th><th>Model</th></tr>
+      <tr><td>Back-right corner 0.8–1.4 m</td><td>35.5</td><td>35.0–36.1 ✓</td></tr>
+      <tr><td>Glass top-right corner</td><td>35.1</td><td>35.7</td></tr>
+      <tr><td>Glass bottom-right corner</td><td>35.1</td><td>36.6</td></tr>
+      <tr><td>Door sensor_3</td><td>28</td><td>25.9 ✗</td></tr>
+      <tr><td>Flange sensor_2</td><td>35.5</td><td>35.1 (100 %) ✗</td></tr>
+      <tr><td>Air loop output</td><td>0 %</td><td>28 % ✗</td></tr>
+    </table>
+    <div class="note">Energy balance −1.9 % (157.6 W in, 154.6 W out). No value tuned to the measurements.</div>
+
+    <h2>Heat lost to the room, by face</h2>
+    <table id="loss"></table>
+    <div class="note">The cabinet skin is the heat sink: everything the heaters give ends here.</div>
 
     <h2>Heater zones <span class="sub">(click a row to highlight)</span></h2>
     <label><input type="checkbox" id="showZones" checked> Draw zones on the walls</label>
@@ -85,7 +102,7 @@
     <h2>Notes</h2>
     <div class="note">Zones are drawn on the heater side of each wall (outside of the tub): view from outside, or switch "Tub walls" off.<br>
     Hover a surface for its temperature. Drag to rotate, right-drag to pan, scroll to zoom.<br>
-    A few air points next to the venturi outlet are non-physical (solver overshoot, known issue #23); they show as dark-blue spots on streamlines there.</div>
+    Blower duct: moving air HEPA → impeller box → volute → venturi channel along the left tub wall → exit (35 m³/h); the airflow is exactly mass-conserving on this mesh.</div>
   </div>
   <div id="view">
     <div id="load">Loading scene…</div>
@@ -144,9 +161,9 @@
     geo.setIndex(new THREE.BufferAttribute(idx,1));
     geo.computeVertexNormals();
     const mat=new THREE.MeshLambertMaterial({vertexColors:true, side:THREE.DoubleSide, clippingPlanes:clips,
-      transparent:g==='glass', opacity:g==='glass'?0.85:1});
+      transparent:(g==='glass'||g==='enclosure'), opacity:g==='glass'?0.85:(g==='enclosure'?0.45:1), depthWrite:g!=='enclosure'});
     const m=new THREE.Mesh(geo,mat); m.userData={g, T:d.T};
-    m.visible = g!=='plates';
+    m.visible = g!=='plates' && g!=='enclosure';
     scene.add(m); meshes[g]=m;
   }
   function paintSurfaces(){
@@ -187,6 +204,8 @@
     const lb=label(`${n} ${sensorC[n]!==undefined?sensorC[n].toFixed(1)+' °C':''}`); lb.position.set(p[0],p[1],p[2]+40); lb.renderOrder=11; sensGroup.add(lb);
   }
 
+  const L=surf.info.loss_by_face_W||{}; const Lt=Object.values(L).reduce((a,b)=>a+b,0);
+  document.getElementById('loss').innerHTML=Object.entries(L).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<tr><td>${k}</td><td>${v.toFixed(1)} W · ${(100*v/Lt).toFixed(0)} %</td></tr>`).join('')+`<tr><td><b>total</b></td><td><b>${Lt.toFixed(1)} W</b></td></tr>`;
   // ---- operating condition, loops, zones ----
   const C=zdat.conditions, Z=zdat.zones;
   const outerTxt=Object.entries(C.outer).map(([k,v])=>`${k}: h ${v.h}${v.h==='auto'?'':' W/m²K'}, ε ${v.eps}`).join('; ');
@@ -265,7 +284,7 @@
     if(!hits.length){ probe.style.display='none'; return; }
     const h=hits[0], T=h.object.userData.T, f=h.face;
     const t=(T[f.a]+T[f.b]+T[f.c])/30;
-    const names={tub:'Tub wall',glass:'Glass door',door_flange:'Flange / gasket / tub door',internals:'Hotel / robot / hardware',plates:'Microplate',blower:'Blower duct part'};
+    const names={enclosure:'Enclosure / outer skin',tub:'Tub wall',glass:'Glass door',door_flange:'Flange / gasket / tub door',internals:'Hotel / robot / hardware',plates:'Microplate',blower:'Blower duct part'};
     const st = t<DEW?'below dew point':(t<DEW+MARGIN?'inside 0.6 K margin':'ok');
     probe.style.display='block';
     probe.innerHTML=`<b>${t.toFixed(1)} °C</b> · ${st}<br><span class="sub">${names[h.object.userData.g]} · x ${h.point.x.toFixed(0)} y ${h.point.y.toFixed(0)} z ${h.point.z.toFixed(0)} mm</span>`;

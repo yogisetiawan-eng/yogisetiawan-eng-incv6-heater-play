@@ -5,7 +5,7 @@ chamber wall temperatures vs the dew point at 37 °C / 90 %RH, airflow streamlin
 
 **Open it:** https://yogisetiawan-eng.github.io/yogisetiawan-eng-incv6-heater-play/
 
-Current page: steady state of run v8 (room 18 °C). Coming next: a "play" version with sliders for every heater
+Current page: steady state of run v11 (room 18 °C). Coming next: a "play" version with sliders for every heater
 zone, loop setpoints, room temperature and vaporizer power, recomputing the full 3D map and the control loops live
 in the browser from precomputed Elmer basis fields.
 
