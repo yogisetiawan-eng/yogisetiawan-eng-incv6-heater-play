@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>INCV6 heat + airflow 3D — run v11 (18 °C room)</title>
+<title>INCV6 heat + airflow 3D — run v12 (18 °C room)</title>
 <style>
   :root { --bg:#0f1115; --panel:#171a21; --ink:#e7e9ee; --mute:#9aa3b2; --line:#2a2f3a; --acc:#e8a33d; }
   html,body { margin:0; height:100%; background:var(--bg); color:var(--ink); font:13px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
@@ -80,14 +80,16 @@
     <h2>Against the real machine</h2>
     <table id="calib">
       <tr><th></th><th>Real</th><th>Model</th></tr>
-      <tr><td>Back-right corner 0.8–1.4 m</td><td>35.5</td><td>35.0–36.1 ✓</td></tr>
-      <tr><td>Glass top-right corner</td><td>35.1</td><td>35.7</td></tr>
-      <tr><td>Glass bottom-right corner</td><td>35.1</td><td>36.6</td></tr>
-      <tr><td>Door sensor_3</td><td>28</td><td>25.9 ✗</td></tr>
-      <tr><td>Flange sensor_2</td><td>35.5</td><td>35.1 (100 %) ✗</td></tr>
+      <tr><td>Back-right corner 0.8–1.4 m</td><td>35.5</td><td>34.9–35.9 ✓</td></tr>
+      <tr><td>Glass top-right corner</td><td>35.1</td><td>36.1</td></tr>
+      <tr><td>Glass bottom-right corner</td><td>35.1</td><td>35.7</td></tr>
+      <tr><td>Door sensor_3</td><td>28</td><td>26.3 ✗</td></tr>
+      <tr><td>Flange sensor_2</td><td>35.5</td><td>35.5 (99.6 %)</td></tr>
+      <tr><td>Front flange L / B / R / T</td><td>≥50 / ≤37 / 36 / 38–39</td><td>29 / 32 / 35 / 31 ✗</td></tr>
+      <tr><td>Reservoir pan</td><td>above 35.1</td><td>26.8–34.8 ✗</td></tr>
       <tr><td>Air loop output</td><td>0 %</td><td>28 % ✗</td></tr>
     </table>
-    <div class="note">Energy balance −1.9 % (157.6 W in, 154.6 W out). No value tuned to the measurements.</div>
+    <div class="note">Energy balance closed (157.0 W); vaporizer body at 120 °C holds with ~5.6 W. No value tuned to the measurements.</div>
 
     <h2>Heat lost to the room, by face</h2>
     <table id="loss"></table>
